@@ -1,0 +1,12 @@
+{
+	"autoload": {
+		"psr-0": {
+			"Proxy": "src"
+		}
+	},
+	"require": {
+		"react/socket": "0.3.*",
+		"monolog/monolog": "1.8.0",
+		"react/socket-client": "v0.3.2"
+	}
+}

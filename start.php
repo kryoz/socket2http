@@ -8,7 +8,7 @@ use Proxy\TerminalProxy;
 
 require dirname(__DIR__).'/vendor/autoload.php';
 
-//
+define('CONF_SOCKET_PORT', 4000);
 define('CONF_DNS_RESOLVER', '127.0.0.1');
 // ip + path + port of HTTP host destination
 define('CONF_HTTP_HOST', '127.0.0.1');
@@ -38,5 +38,5 @@ $socket->on('connection', function ($conn) use (&$i, $app) {
 		$i++;
 	});
 
-$socket->listen(4000);
+$socket->listen(CONF_SOCKET_PORT);
 $loop->run();

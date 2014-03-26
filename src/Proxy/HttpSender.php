@@ -81,20 +81,15 @@ class HttpSender
 		$connector
 			->create($this->getHost(), $this->getPort())
 			->then(function (Stream $stream) use ($data, $term) {
-					$out = "POST ".$this->getUrl()." HTTP/1.1\r\n";
-					$out.= "Host: ".$this->getHost()."\r\n";
-					$out.= "Content-Type: application/x-www-form-urlencoded\r\n";
-					$out.= "Content-Length: ".strlen($data)."\r\n";
-					$out.= "Connection: Close\r\n\r\n";
-					$out.= $data;
+
 
 					if (!$stream->isWritable()) {
 						$this->getLogger()->warn('HTTP host not writable!');
 						return;
 					}
 
-					$this->getLogger()->info("Sending data to HTTP:\n$out\n");
-					$stream->write($out);
+					$this->getLogger()->info("Sending data to HTTP");
+					$stream->write($this->createRequestText($data));
 
 					$stream->on('data', function ($response) use ($stream, $term) {
 							$this->logger->info("Returning response to ".$term->id."\n".print_r($response,1));
@@ -104,5 +99,17 @@ class HttpSender
 						});
 				});
 
+	}
+
+	private function createRequestText($data)
+	{
+		$out = "POST ".$this->getUrl()." HTTP/1.1\r\n";
+		$out.= "Host: ".$this->getHost()."\r\n";
+		$out.= "Content-Type: application/x-www-form-urlencoded\r\n";
+		$out.= "Content-Length: ".strlen($data)."\r\n";
+		$out.= "Connection: Close\r\n\r\n";
+		$out.= $data;
+
+		return $out;
 	}
 }

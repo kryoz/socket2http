@@ -94,10 +94,7 @@ class HttpSender
 					$stream->on('data', function ($response) use ($stream, $term) {
 							try {
 								$this->logger->info("Returning response to ".$term->id."\n".print_r($response,1));
-								$responseData = $this->unwrapHttp($response, $type);
-
-								$this->logger->info(get_class($term));
-								$term->write($responseData);
+								$term->write($response);
 							} catch (\Exception $e) {
 								$term->close();
 								throw $e;

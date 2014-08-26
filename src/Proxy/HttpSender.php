@@ -2,7 +2,7 @@
 
 namespace Proxy;
 
-use Monolog\Logger;
+use Core\DI;
 use React\Dns\Resolver\Factory as Resolver;
 use React\Socket\ConnectionInterface;
 use React\SocketClient\Connector;
@@ -13,23 +13,13 @@ class HttpSender
 	private $host;
 	private $url;
 	private $port;
-	/**
-	 * @var Logger
-	 */
-	private $logger;
 
-	public function __construct(Logger $logger)
+	public function __construct()
 	{
-		$this->logger = $logger;
-		$this->host = CONF_HTTP_HOST;
-		$this->url = CONF_URL_PATH;
-		$this->port = CONF_HTTP_PORT;
-	}
-
-	public function setHost($host)
-	{
-		$this->host = $host;
-		return $this;
+		$config = DI::get()->getConfig()->proxy;
+		$this->host = $config->http_host;
+		$this->port = $config->http_port;
+		$this->url = $config->url;
 	}
 
 	public function getHost()
@@ -37,31 +27,14 @@ class HttpSender
 		return $this->host;
 	}
 
-	public function setPort($port)
-	{
-		$this->port = $port;
-		return $this;
-	}
-
 	public function getPort()
 	{
 		return $this->port;
 	}
 
-	public function setUrl($url)
-	{
-		$this->url = $url;
-		return $this;
-	}
-
 	public function getUrl()
 	{
 		return $this->url;
-	}
-
-	public function getLogger()
-	{
-		return $this->logger;
 	}
 
 	public function send(ConnectionInterface $term, $data)
@@ -70,9 +43,9 @@ class HttpSender
 			throw new \Exception('HttpSender is not configured!');
 		}
 
-		$loop = MightyLoop::getInstance()->get();
+		$loop = DI::get()->getLoop();
 		$dnsResolverFactory = new Resolver();
-		$dns = $dnsResolverFactory->createCached(CONF_DNS_RESOLVER, $loop);
+		$dns = $dnsResolverFactory->createCached(DI::get()->getConfig()->proxy->dns_resolver, $loop);
 
 		$data = ['data' => $data];
 		$data = http_build_query($data);
@@ -81,19 +54,19 @@ class HttpSender
 		$connector
 			->create($this->getHost(), $this->getPort())
 			->then(function (Stream $stream) use ($data, $term) {
-
+					$logger = DI::get()->getLogger();
 
 					if (!$stream->isWritable()) {
-						$this->getLogger()->warn('HTTP host not writable!');
+						$logger->warn('HTTP host not writable!');
 						return;
 					}
 
-					$this->getLogger()->info("Sending data to HTTP");
+					$logger->info("Sending data to HTTP");
 					$stream->write($this->createRequestText($data));
 
-					$stream->on('data', function ($response) use ($stream, $term) {
+					$stream->on('data', function ($response) use ($stream, $term, $logger) {
 							try {
-								$this->logger->info("Returning response to ".$term->id."\n".print_r($response,1));
+								$logger->info("Returning response to ".$term->id."\n".print_r($response,1));
 								$term->write($response);
 							} catch (\Exception $e) {
 								$term->close();

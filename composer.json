@@ -1,12 +1,27 @@
 {
+	"name": "Socket2Http/socket2http",
+	"description": "simple implementation of async proxy daemon",
+	"minimum-stability": "stable",
+	"license": "MIT",
+	"authors": [
+		{
+			"name": "Kubintsev Alexander",
+			"email": "alex@kubintsev.ru"
+		}
+	],
+	"config": {
+		"bin-dir": "bin/"
+	},
 	"autoload": {
-		"psr-0": {
-			"Proxy": "src"
+		"psr-4": {
+			"": "src"
 		}
 	},
 	"require": {
-		"react/socket": "0.3.*",
-		"monolog/monolog": "1.8.0",
-		"react/socket-client": "v0.3.2"
+		"react/socket": "*@stable",
+		"monolog/monolog": "*@stable",
+		"react/socket-client": "*@stable",
+		"orno/di": "2.*@stable",
+		"zendframework/zend-config": "2.*@stable"
 	}
 }

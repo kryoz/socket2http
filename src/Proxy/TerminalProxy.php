@@ -1,34 +1,37 @@
 <?php
+declare(strict_types=1);
+
 namespace Proxy;
 
-use Core\DI;
+use Psr\Log\LoggerInterface;
 use React\Socket\ConnectionInterface;
 
 class TerminalProxy
 {
-	public function connect(ConnectionInterface $conn)
-	{
-		$logger = DI::get()->getLogger();
-		$logger->info(sprintf("New connection %s", $conn->id));
+    private LoggerInterface $logger;
+    private HttpSender $sender;
 
-		$conn->on('end', function () use ($conn, $logger) {
-				$logger->info(sprintf("Connection %s disconnected", $conn->id));
-			});
+    public function __construct(LoggerInterface $logger, array $config)
+    {
+        $this->sender = new HttpSender($logger, $config['proxy']);
+        $this->logger = $logger;
+    }
 
-		$conn->on('data', function ($data) use ($conn, $logger) {
-				if (!$conn->isReadable()) {
-					$logger->warn("Attempt to read from closed socket ".$conn->id);
-					return;
-				}
-				if (!$conn->isWritable()) {
-					$logger->warn("Attempt to read from closed socket ".$conn->id);
-					return;
-				}
+    public function connect(ConnectionInterface $conn): void
+    {
+		$conn->on('data', function ($data) use ($conn) {
+            if (!$conn->isReadable()) {
+                $this->logger->error('Attempt to read from closed socket');
+                return;
+            }
+            if (!$conn->isWritable()) {
+                $this->logger->error('Attempt to read from closed socket');
+                return;
+            }
 
-				$logger->info("Receiving data from ".$conn->id);
+            $this->logger->info("Receiving data from ".$conn->getRemoteAddress());
 
-				$sender = new HttpSender();
-				$sender->send($conn, $data);
-			});
+            $this->sender->send($conn, $data);
+        });
 	}
 }

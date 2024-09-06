@@ -1,57 +1,37 @@
 <?php
+declare(strict_types=1);
 
-use Core\DI;
-use Core\DIBuilder;
-use Monolog\Handler\StreamHandler;
-use Monolog\Logger;
-use React\Socket\Server as SocketServer;
+use React\EventLoop\Loop;
+use React\Socket\ConnectionInterface;
 use Proxy\TerminalProxy;
-use Zend\Config\Config;
+use React\Socket\SocketServer;
 
-require_once __DIR__.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'config.php';
-$container = DI::get()->container();
-DIBuilder::setupNormal($container);
-$config = $container->get('config');
-/* @var $config Config */
-$logger = $container->get('logger');
-/* @var $logger Logger */
+[$config, $logger] = require __DIR__.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'config.php';
 
 $pidFile = sys_get_temp_dir().DIRECTORY_SEPARATOR.'proxy-server.pid';
 
 if (file_exists($pidFile)) {
 	$pid = file_get_contents($pidFile);
+    // don't know how to handle this on windows
 	if (file_exists("/proc/$pid")) {
 		$logger->error("Found already running daemon instance [pid = $pid], aborting.");
 		exit(1);
-	} else {
-		unlink($pidFile);
 	}
+
+    unlink($pidFile);
 }
 
-$fh = fopen($pidFile, 'w');
-if ($fh) {
-	fwrite($fh, getmypid());
+if ($fh = fopen($pidFile, 'wb')) {
+	fwrite($fh, (string) getmypid());
 }
 fclose($fh);
 
-ini_set("session.gc_maxlifetime", $config->session->lifetime);
-gc_enable();
 
-$logger = new Logger('socketserver');
-$logger->pushHandler(new StreamHandler(STDOUT));
+$loop = Loop::get();
+$socket = new SocketServer($config['proxy']['socket_addr'].':'.$config['proxy']['socket_port'], [], $loop);
 
-$loop = DI::get()->getLoop();
-$socket = new SocketServer($loop);
+$app = new TerminalProxy($logger, $config);
 
-$app = new TerminalProxy();
+$socket->on('connection', static fn (ConnectionInterface $conn) => $app->connect($conn));
 
-$i = 0;
-
-$socket->on('connection', function ($conn) use (&$i, $app) {
-		$conn->id = $i;
-		$app->connect($conn);
-		$i++;
-	});
-
-$socket->listen($config->proxy->socket_port);
 $loop->run();

@@ -1,5 +1,5 @@
 {
-	"name": "Socket2Http/socket2http",
+	"name": "kryoz/socket2http",
 	"description": "simple implementation of async proxy daemon",
 	"minimum-stability": "stable",
 	"license": "MIT",
@@ -18,10 +18,9 @@
 		}
 	},
 	"require": {
+		"php": "~8.1",
 		"react/socket": "*@stable",
 		"monolog/monolog": "*@stable",
-		"react/socket-client": "*@stable",
-		"orno/di": "2.*@stable",
-		"zendframework/zend-config": "2.*@stable"
-	}
+        "ext-http": "*"
+    }
 }

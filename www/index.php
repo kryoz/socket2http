@@ -1,7 +1,5 @@
 <?php
-$secondsToDelay = 5;
-sleep($secondsToDelay);
+// This script is only for testing purpose
 ?>
-I'm a webpage.
-I have slept for <?=$secondsToDelay?> seconds, now I can respond!
-Your request was <?=print_r($_REQUEST)?>
+This is test web-host.
+Your request was <?=print_r($_REQUEST, true)?>
